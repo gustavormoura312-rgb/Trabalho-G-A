@@ -40,13 +40,22 @@ jobs:
           PAT: ${{ secrets.COPILOT_PAT }}
           GHT: ${{ github.token }}
         run: |
-          jq -n --rawfile p prompt.txt '{model:"openai/gpt-4o-mini",messages:[{role:"system",content:"Você é um revisor de código objetivo."},{role:"user",content:$p}],max_tokens:1500}' > req.json
-          for T in "$PAT" "$GHT"; do
-            code=$(curl -sS -o resp.json -w "%{http_code}" https://models.github.ai/inference/chat/completions -H "Authorization: Bearer $T" -H "Content-Type: application/json" -d @req.json)
-            echo "DIAG HTTP $code"
-            if [ "$code" = "200" ]; then jq -r '.choices[0].message.content' resp.json > resposta.md; exit 0; fi
-            echo "DIAG BODY: $(head -c 300 resp.json)"
-          done
+          mk() { jq -n --arg m "$1" --rawfile p prompt.txt '{model:$m,messages:[{role:"system",content:"Você é um revisor de código objetivo."},{role:"user",content:$p}],max_tokens:1500}'; }
+          mk "openai/gpt-4o-mini" > req1.json
+          mk "gpt-4o-mini" > req2.json
+          tentar() {
+            for T in "$PAT" "$GHT"; do
+              code=$(curl -sS -m 90 -o resp.json -w "%{http_code}" "$1" -H "Authorization: Bearer $T" -H "Content-Type: application/json" -d @"$2" || true)
+              echo "DIAG $1 HTTP $code BODY: $(head -c 150 resp.json | tr '\n' ' ')"
+              if jq -e '.choices[0].message.content' resp.json >/dev/null 2>&1; then
+                jq -r '.choices[0].message.content' resp.json > resposta.md
+                return 0
+              fi
+            done
+            return 1
+          }
+          tentar https://models.github.ai/inference/chat/completions req1.json && exit 0
+          tentar https://models.inference.ai.azure.com/chat/completions req2.json && exit 0
           exit 1
       - name: Comenta no PR
         env:
