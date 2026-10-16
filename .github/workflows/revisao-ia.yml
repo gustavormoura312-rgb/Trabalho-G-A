@@ -25,15 +25,8 @@ jobs:
             git diff "origin/$BASE...HEAD" | head -c 20000
             echo '```'
           } > prompt.txt
-      - name: Diagnostico da API de modelos
-        env:
-          TOKEN: ${{ secrets.COPILOT_PAT }}
-        run: |
-          curl -sS -o resp.json -w "DIAG HTTP %{http_code}\n" https://models.github.ai/inference/chat/completions \
-            -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-            -d '{"model":"openai/gpt-4o-mini","messages":[{"role":"user","content":"diga ola"}],"max_tokens":20}'
-          echo "DIAG BODY: $(head -c 400 resp.json)"
       - id: ia
+        continue-on-error: true
         uses: actions/ai-inference@v1
         with:
           prompt-file: prompt.txt
@@ -41,9 +34,25 @@ jobs:
           system-prompt: Você é um revisor de código objetivo.
           model: openai/gpt-4o-mini
           max-tokens: 1500
+      - name: Reserva via API (se a acao falhar)
+        if: steps.ia.outcome == 'failure'
+        env:
+          PAT: ${{ secrets.COPILOT_PAT }}
+          GHT: ${{ github.token }}
+        run: |
+          jq -n --rawfile p prompt.txt '{model:"openai/gpt-4o-mini",messages:[{role:"system",content:"Você é um revisor de código objetivo."},{role:"user",content:$p}],max_tokens:1500}' > req.json
+          for T in "$PAT" "$GHT"; do
+            code=$(curl -sS -o resp.json -w "%{http_code}" https://models.github.ai/inference/chat/completions -H "Authorization: Bearer $T" -H "Content-Type: application/json" -d @req.json)
+            echo "DIAG HTTP $code"
+            if [ "$code" = "200" ]; then jq -r '.choices[0].message.content' resp.json > resposta.md; exit 0; fi
+            echo "DIAG BODY: $(head -c 300 resp.json)"
+          done
+          exit 1
       - name: Comenta no PR
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
           RESP: ${{ steps.ia.outputs.response-file }}
-        run: gh pr comment "$PR" --body-file "$RESP"
+        run: |
+          if [ -s resposta.md ]; then F=resposta.md; else F="$RESP"; fi
+          gh pr comment "$PR" --body-file "$F"
