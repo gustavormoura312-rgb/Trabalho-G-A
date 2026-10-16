@@ -5,6 +5,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  models: read
 jobs:
   revisar:
     runs-on: ubuntu-latest
@@ -15,7 +16,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run: npm install -g @github/copilot
+      - run: npm install -g @【entity-github¦canonical_name=GitHub】/【entity-copilot¦canonical_name=Copilot】
       - name: Monta o prompt
         run: |
           {
@@ -28,12 +29,18 @@ jobs:
           } > prompt.txt
       - id: ia
         uses: actions/ai-inference@v1
-        env:
-          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
         with:
           prompt-file: prompt.txt
           system-prompt: Você é um revisor de código objetivo.
+          model: openai/gpt-4o-mini
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Comenta no PR
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh pr comment ${{ github.event.pull_request.number }} --body-file "${{ steps.ia.outputs.response-file }}"
+        run: |
+          if [ -f "${{ steps.ia.outputs.response-file }}" ]; then
+            gh pr comment ${{ github.event.pull_request.number }} --body-file "${{ steps.ia.outputs.response-file }}"
+          else
+            gh pr comment ${{ github.event.pull_request.number }} --body "IA: ${{ steps.ia.outputs.response }}"
+          fi
