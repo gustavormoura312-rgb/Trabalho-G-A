@@ -25,6 +25,14 @@ jobs:
             git diff "origin/$BASE...HEAD" | head -c 20000
             echo '```'
           } > prompt.txt
+      - name: Diagnostico da API de modelos
+        env:
+          TOKEN: ${{ secrets.COPILOT_PAT }}
+        run: |
+          curl -sS -o resp.json -w "DIAG HTTP %{http_code}\n" https://models.github.ai/inference/chat/completions \
+            -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+            -d '{"model":"openai/gpt-4o-mini","messages":[{"role":"user","content":"diga ola"}],"max_tokens":20}'
+          echo "DIAG BODY: $(head -c 400 resp.json)"
       - id: ia
         uses: actions/ai-inference@v1
         with:
