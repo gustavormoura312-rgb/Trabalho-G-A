@@ -1,4 +1,4 @@
-﻿name: revisao-ia
+name: revisao-ia
 on:
   pull_request:
     types: [opened, synchronize]
