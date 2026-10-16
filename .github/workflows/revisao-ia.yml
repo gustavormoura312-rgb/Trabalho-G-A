@@ -16,7 +16,8 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run: npm install -g @【entity-github¦canonical_name=GitHub】/【entity-copilot¦canonical_name=Copilot】
+      - name: Instala Copilot CLI
+        run: npm install -g @github/copilot
       - name: Monta o prompt
         run: |
           {
@@ -42,5 +43,5 @@ jobs:
           if [ -f "${{ steps.ia.outputs.response-file }}" ]; then
             gh pr comment ${{ github.event.pull_request.number }} --body-file "${{ steps.ia.outputs.response-file }}"
           else
-            gh pr comment ${{ github.event.pull_request.number }} --body "IA: ${{ steps.ia.outputs.response }}"
+            gh pr comment ${{ github.event.pull_request.number }} --body "${{ steps.ia.outputs.response }}"
           fi
