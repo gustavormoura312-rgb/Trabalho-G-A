@@ -25,15 +25,17 @@ jobs:
             git diff "origin/$BASE...HEAD" | head -c 20000
             echo '```'
           } > prompt.txt
-      - id: ia
-        uses: actions/ai-inference@v3
-        with:
-          prompt-file: prompt.txt
-          system-prompt: Voce e um revisor de codigo objetivo.
-          model: openai/gpt-4o-mini
+      - name: Chama o GitHub Models
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          jq -n --rawfile p prompt.txt '{model:"openai/gpt-4o-mini",messages:[{role:"system",content:"Voce e um revisor de codigo objetivo."},{role:"user",content:$p}]}' > body.json
+          code=$(curl -s -o resp.json -w "%{http_code}" -X POST https://models.github.ai/inference/chat/completions -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: application/json" -d @body.json)
+          echo "HTTP $code"
+          if [ "$code" != "200" ]; then head -c 600 resp.json; exit 1; fi
+          jq -r '.choices[0].message.content' resp.json > resposta.md
       - name: Comenta no PR
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
-          RESP: ${{ steps.ia.outputs.response-file }}
-        run: gh pr comment "$PR" --body-file "$RESP"
+        run: gh pr comment "$PR" --body-file resposta.md
