@@ -26,7 +26,7 @@ jobs:
             echo '```'
           } > prompt.txt
       - id: ia
-        uses: actions/ai-inference@v2
+        uses: actions/ai-inference@v3
         with:
           prompt-file: prompt.txt
           system-prompt: Voce e um revisor de codigo objetivo.
