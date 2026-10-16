@@ -30,6 +30,8 @@ jobs:
         with:
           prompt-file: prompt.txt
           system-prompt: Você é um revisor de código objetivo.
+          model: openai/gpt-4o-mini
+          max-tokens: 1500
       - name: Comenta no PR
         env:
           GH_TOKEN: ${{ github.token }}
