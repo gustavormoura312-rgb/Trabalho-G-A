@@ -34,7 +34,7 @@ jobs:
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
         run: |
           echo "DIAG tamanho do segredo: ${#COPILOT_GITHUB_TOKEN}"
-          copilot -p "diga ola" -s --no-ask-user --model gpt-4.1 2>&1 | head -c 600 | sed 's/^/DIAG /'
+          copilot -p "diga ola" -s --no-ask-user --model gpt-4o 2>&1 | head -c 600 | sed 's/^/DIAG /'
       - id: ia
         uses: actions/ai-inference@v3
         env:
