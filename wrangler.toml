@@ -1,0 +1,8 @@
+name = "trabalho-g-a"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "trabalho-g-a-db"
+database_id = "cb5e8c49-dabe-4909-aa47-e036d6ce76ab"
