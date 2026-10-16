@@ -17,33 +17,23 @@ jobs:
           node-version: 22
       - run: npm install -g @github/copilot
       - name: Monta o prompt
-        env:
-          BASE: ${{ github.base_ref }}
         run: |
           {
             echo "Revise o diff de um site com Cloudflare Pages Functions e D1."
             echo "Aponte, em português e em até 10 itens: segredos expostos,"
             echo "SQL montado por concatenação em vez de prepare().bind(), e erros de lógica."
             echo '```diff'
-            git diff "origin/$BASE...HEAD" | head -c 20000
+            git diff origin/${{ github.base_ref }}...HEAD | head -c 20000
             echo '```'
           } > prompt.txt
-      - name: Diagnostico do Copilot CLI
-        continue-on-error: true
+      - id: ia
+        uses: actions/ai-inference@v1
         env:
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
-        run: |
-          echo "DIAG tamanho do segredo: ${#COPILOT_GITHUB_TOKEN}"
-          copilot -p "diga ola" -s --no-ask-user --model gpt-4o 2>&1 | head -c 600 | sed 's/^/DIAG /'
-            - id: ia
-        uses: actions/ai-inference@v1
         with:
           prompt-file: prompt.txt
           system-prompt: Você é um revisor de código objetivo.
-          model: openai/gpt-4o-mini
       - name: Comenta no PR
         env:
           GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number }}
-          RESP: ${{ steps.ia.outputs.response-file }}
-        run: gh pr comment "$PR" --body-file "$RESP"
+        run: gh pr comment ${{ github.event.pull_request.number }} --body-file "${{ steps.ia.outputs.response-file }}"
