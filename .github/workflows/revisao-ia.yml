@@ -30,7 +30,6 @@ jobs:
         with:
           prompt-file: prompt.txt
           token: ${{ secrets.COPILOT_PAT }}
-          token: ${{ secrets.COPILOT_PAT }}
           system-prompt: Você é um revisor de código objetivo.
           model: openai/gpt-4o-mini
           max-tokens: 1500
