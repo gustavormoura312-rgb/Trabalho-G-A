@@ -42,7 +42,7 @@ jobs:
         with:
           prompt-file: prompt.txt
           system-prompt: Você é um revisor de código objetivo.
-          model: gpt-4o
+          model: gpt-5-mini
       - name: Comenta no PR
         env:
           GH_TOKEN: ${{ github.token }}
