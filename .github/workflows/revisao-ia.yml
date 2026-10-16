@@ -35,14 +35,12 @@ jobs:
         run: |
           echo "DIAG tamanho do segredo: ${#COPILOT_GITHUB_TOKEN}"
           copilot -p "diga ola" -s --no-ask-user --model gpt-4o 2>&1 | head -c 600 | sed 's/^/DIAG /'
-      - id: ia
-        uses: actions/ai-inference@v3
-        env:
-          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
+            - id: ia
+        uses: actions/ai-inference@v1
         with:
           prompt-file: prompt.txt
           system-prompt: Você é um revisor de código objetivo.
-          model: claude-sonnet-4
+          model: openai/gpt-4o-mini
       - name: Comenta no PR
         env:
           GH_TOKEN: ${{ github.token }}
